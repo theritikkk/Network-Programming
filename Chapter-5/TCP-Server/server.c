@@ -142,8 +142,9 @@ void *get_in_addr( struct sockaddr *sa ) {
     }
 
     // IPv6 address
+    return &( ( ( struct sockaddr_in6* ) sa ) -> sin6_addr );
     /* 
-        Return &( ( ( struct sockaddr_in6* ) sa ) -> sin6_addr );
+        return &( ( ( struct sockaddr_in6* ) sa ) -> sin6_addr );
         Cast generic pointer to struct sockaddr_in *
         Access sin_addr ( IPv4 address field )
         Return address of that field
@@ -388,7 +389,7 @@ int main( void ) {
     sa.sa_handler = sigchld_handler;
     sigemptyset( &sa.sa_mask );
     sa.sa_flags = SA_RESTART;   // With it : interrupted system calls restart automatically
-    // Without it : accept() may fail with EINTR
+    // Without it : accept() may fail with EINTR - Error: Interrupted system call
     // Server loop breaks unexpectedly
 
     // Meaning : when SIGCHLD occurs, call sigchld_handler()
@@ -416,41 +417,68 @@ int main( void ) {
 
     /* ================= STEP 6: ACCEPT CLIENT CONNECTIONS ================= */
 
+    // To run the server forever : accept clients, handle them, and keep listening i.e., while( 1 )
     while( 1 ) {
         // Infinite loop → server runs continuously
         sin_size = sizeof their_addr;
 
         // Accept incoming client connection
         new_fd = accept( sockfd, ( struct sockaddr * ) &their_addr, &sin_size );
+        /*
+            new_fd is blocked until a client connects
+            new_fd : returns new socket dedicated to that client
+            new_fd is the new socket
+            sockfd remains unchanged ( still listening )
+        */
         if( new_fd == -1 ) {
             perror( "accept" );
             continue;
         }
 
-        // Convert client IP to readable form
+        // Convert client IP to readable form - string, used for logging, and debugging
         inet_ntop( their_addr.ss_family,
                   get_in_addr( ( struct sockaddr * ) &their_addr ),
                   client_ip, sizeof client_ip 
                 );
+        // only for logging / debugging
 
         printf( "server: got connection from %s\n", client_ip );
+        // server: got connection from 192.168.1.5
+
+
 
         /* ================= STEP 7: HANDLE CLIENT ================= */
 
-        if( !fork() ) { // Child process
+        /*      fork()
+                This creates two processes:
+                    1. Parent process :
+                        fork() returns child PID ( non - zero )
+                        Skips the if block
+                    2. Child process :
+                        fork() returns 0
+                        Enters the if block
+        */
+        if( !fork() ) { 
+            // Child process
 
+            // Child handles only this client
             close( sockfd ); // Child doesn't need listening socket
+            // releases listening socket
 
-            // Send message to client
+            // Send message to client ( new_fd )
             const char *msg = "Hello client! Connection established.\n";
             send( new_fd, msg, strlen(msg), 0 );
 
             close( new_fd ); // Close client socket
             exit( 0 );       // Terminate child process
+
+            // OS sends 'SIGCHLD' to parent
         }
 
         // Parent closes connected socket and waits for more clients
         close( new_fd );
+        // Parent does not communicate with client
+
     }
 
     return 0;
