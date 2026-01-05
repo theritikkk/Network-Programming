@@ -280,13 +280,49 @@ instead of creating one process per client.
 - How OS-enforced limits protect system stability
 
 ## 📸 Screenshots & Experiments
-This repository includes screenshots showing:
-- Multiple concurrent client connections
-- IPv6 loopback usage (::1)
-- Process exhaustion during stress testing
-- System recovery after cleanup
 
-#### 📁 See the screenshots/ directory.
+The following screenshots document real experiments performed while running and
+stress-testing the concurrent TCP server on macOS.
+
+---
+
+### 🔹 Server Startup and Single Client Connection
+
+This screenshot shows:
+- Successful compilation of the server
+- Server listening on port `3490`
+- A client connecting using `nc`
+- Server logging the IPv6 loopback address (`::1`)
+
+![Server startup and single client connection](screenshots/server-startup-single-client.png)
+
+---
+
+### 🔹 Multiple Concurrent Client Connections
+
+This screenshot demonstrates:
+- Multiple terminal windows acting as clients
+- Each client connecting independently using `nc localhost 3490`
+- The server handling each connection concurrently using `fork()`
+
+This validates the **fork-per-connection concurrency model**.
+
+![Multiple concurrent clients](screenshots/multiple-concurrent-clients.png)
+
+---
+
+### 🔹 Stress Testing and Process Exhaustion
+
+This screenshot captures:
+- A large number of simultaneous client connections
+- Repeated `fork()` calls by the server
+- The operating system eventually rejecting new process creation
+
+Observed error:
+```text
+fork failed: resource temporarily unavailable
+```
+![Multiple concurrent clients](screenshots/stress-test-process-exhaustion.png)
 
 ## 🏁 Summary
 
