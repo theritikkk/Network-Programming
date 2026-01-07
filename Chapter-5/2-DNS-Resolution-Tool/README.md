@@ -56,6 +56,7 @@ This repository also includes real execution examples, such as:
 - Multiple client connections resolving the same host
 - IPv6 loopback (::1) resolution
 - Testing via tools like nc, curl, and custom clients
+
 ![screenshot](screenshots/showing-ip.png)
 
 📸 Terminal screenshots are included above to demonstrate real execution output on macOS.
