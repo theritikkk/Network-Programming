@@ -18,9 +18,7 @@ This project is ideal for learning:
 ```text
 showip/
 ├── showip.c        # Main source file
-├── README.md       # Project documentation
-├── LICENSE         # MIT License
-└── .gitignore      # Optional
+└── README.md       # Project documentation
 ```
 
 ## 🛠 Compilation
