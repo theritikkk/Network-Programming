@@ -105,7 +105,7 @@ Enter message ( type exit to quit ): exit
 ## 🖼 Demo Output
 
 <p align="center">
-  <img src="screenshots/tcp-echo-client-server-demo.png" width="800">
+  <img src="screenshots/tcp-echo-client-server-demo.png" width="1000">
 </p>
 
 (Screenshot showing server & client communication)
