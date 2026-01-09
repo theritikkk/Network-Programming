@@ -104,7 +104,9 @@ Enter message ( type exit to quit ): exit
 
 ## 🖼 Demo Output
 
-![demo](/screenshots/tcp-echo-client-server-demo.png)
+<p align="center">
+  <img src="screenshots/tcp-echo-client-server-demo.png" width="800">
+</p>
 
 (Screenshot showing server & client communication)
 
@@ -146,8 +148,6 @@ Client:
 Ritik Raj
 
 ![GitHub](https://github.com/theritikkk)
-
-![LinkedIn](https://www.linkedin.com/in/ritik-raj-773383167/)
 
 ---
 
