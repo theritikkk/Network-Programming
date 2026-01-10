@@ -117,7 +117,7 @@ Server receives message and echoes it back.
 
 Server stops sending.
 
-![demo4](screeshots/4-clinet1-send-stopped.png)
+![demo4](screenshots/4-clinet1-send-stopped.png)
 
 Client sees:
 
