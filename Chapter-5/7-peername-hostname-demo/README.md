@@ -1,5 +1,3 @@
----
-
 # 📡 TCP Server–Client Demo
 Using getpeername() and gethostname()
 
