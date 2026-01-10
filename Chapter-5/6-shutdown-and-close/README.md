@@ -101,7 +101,7 @@ Shows server started and waiting for connections.
 
 Client connects successfully and control menu appears.
 
-~[demo2](screenshots/2-server-client-connected.png)
+![demo2](screenshots/2-server-client-connected.png)
 
 ---
 
@@ -109,13 +109,15 @@ Client connects successfully and control menu appears.
 
 Server receives message and echoes it back.
 
-~[demo3](screenshots/3-echo.png)
+![demo3](screenshots/3-echo.png)
 
 ---
 
 ### 4️⃣ shutdown(SEND)
 
 Server stops sending.
+
+![demo4](screeshots/4-clinet1-send-stopped.png)
 
 Client sees:
 
@@ -128,6 +130,9 @@ Server closed sending side
 ### 5️⃣ shutdown(BOTH)
 
 Server stops both send & receive.
+
+![demo5](screenshots/5-connection-reset.png)
+
 Client sees:
 
 ```bash
