@@ -1,5 +1,5 @@
 /*
-   nonblocking_client.c
+   nonblocking-client.c
 
    Demonstrates:
     - socket()
