@@ -45,16 +45,17 @@
 
 #define PORT "9034"
 // PORT : server listens here
+// must be string because getaddrinfo expects string
 
 #define INITIAL_SIZE 5
 // INITIAL_SIZE : initial poll array size
 
 #define NAME_LEN 32
-// NAME_LEN :	max username length
+// NAME_LEN : max username length
 
 
 
-// store username per client
+// store username per client : representing ONE connected user
 typedef struct {
     
     int fd;
@@ -79,7 +80,7 @@ void *get_in_addr( struct sockaddr *sa ) {
 
     // extracts IP address from: sa_family -> IPv4, IPv6
     if( sa -> sa_family == AF_INET ) {
-
+        // access sin_addr field : return pointer to it
         return &( ( ( struct sockaddr_in* ) sa ) -> sin_addr );
     }
 
@@ -89,7 +90,7 @@ void *get_in_addr( struct sockaddr *sa ) {
 
 
 /* ================= GET TIME - FUNCTION ================= */
-
+// takes buffer to write timestamp
 void get_time( char *buf ) {
 
     time_t now = time( NULL );
@@ -108,9 +109,9 @@ void get_time( char *buf ) {
 client_t* get_client( int fd ) {
 
     for( int i = 0; i < client_count; i++ ) {
-        // Searches client list:
+        // Searches client list: by using 'fd'
     
-        // if fd matches : return client
+        // if 'fd' matches : return client
         if( clients[ i ].fd == fd ) {
             
             return &clients[ i ];
@@ -132,6 +133,7 @@ void add_client( int fd, char *name ) {
     clients[ client_count ].fd = fd;
 
     strncpy( clients[ client_count ].name, name, NAME_LEN );
+    // safe copy
 
     client_count++;
 }
@@ -142,7 +144,7 @@ void add_client( int fd, char *name ) {
 
 void remove_client(int fd) {
 
-    // deletes client:
+    // deletes client : in O(1) time
     for( int i = 0; i < client_count; i++ ) {
 
         // swaps with last client and decreases count
@@ -150,12 +152,47 @@ void remove_client(int fd) {
             
             clients[ i ] = clients[ client_count - 1 ];
             client_count--;
+            // fast delete trick
+
+            /*
+                Index:   0   1   2   3   4
+                Clients: A   B   C   D   E
+
+                To delete C (index 2)
+
+                1. Copy last element into the deleted slot :
+                    clients[2] = clients[4];
+                    Index:   0   1   2   3   4
+                    Clients: A   B   E   D   E   <-- duplicated E
+
+                    So: 
+                        - C is gone
+                        - E moved into position 2
+
+                2. Decrement count :
+                    
+                    client_count--;
+
+                    Now: client_count = 4
+
+                    Index:   0   1   2   3
+                    Clients: A   B   E   D
+
+                3. The last slot (index 4) is now:
+                    - logically dead
+                    - ignored
+                    - inaccessible
+
+                Order is lost:
+                    But for chat server:
+                    - Order irrelevant
+                    - Speed matters
+            */
 
             return;
         }
 
     }
-    // O(1) removal
 }
 
 
@@ -175,11 +212,13 @@ int get_listener_socket( void ) {
     // preparing hints for getaddrinfo
     memset( &hints, 0, sizeof hints );
 
-    hints.ai_family   = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags    = AI_PASSIVE;
+    hints.ai_family   = AF_UNSPEC;          // IPv4 or IPv6
+    hints.ai_socktype = SOCK_STREAM;        // TCP
+    hints.ai_flags    = AI_PASSIVE;         // bind to all interfaces
 
     getaddrinfo( NULL, PORT, &hints, &res );
+    // NULL = local host
+    // PORT = "9034"
 
     // loop through results
     for( p = res; p; p= p -> ai_next ) {
@@ -187,14 +226,14 @@ int get_listener_socket( void ) {
         // create socket
         listener = socket( p -> ai_family, p -> ai_socktype, p -> ai_protocol );
 
-    if( listener < 0 ) {
-        continue;
-    }
+        if( listener < 0 ) {
+            continue;
+        }
 
         // enable port reuse
         setsockopt( listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof( int ) );
 
-        // bind
+        // bind : attach socket to port
         if( bind( listener, p -> ai_addr, p -> ai_addrlen ) < 0 ) {
             close( listener );
             continue;
@@ -228,8 +267,9 @@ int main( void ) {
     int fd_count = 0;
     int fd_size = INITIAL_SIZE;
 
-    struct pollfd *pfds = malloc( sizeof *pfds * fd_size );
     // stores all sockets that poll will monitor
+    struct pollfd *pfds = malloc( sizeof *pfds * fd_size );
+    // this is your monitored fd list
 
     // to create server socket
     listener = get_listener_socket();
@@ -250,30 +290,38 @@ int main( void ) {
 
     // infinite server loop
     while( 1 ) {
+        // server loop
 
         poll( pfds, fd_count, -1 );
-        // waits forever : wakes when activity happens
+        /* waits forever : wakes when activity happens i.e.,
+            Blocked until:
+            - new connection
+            - client message
+        */
 
         // loop through active sockets
         for( int i = 0; i < fd_count; i++ ) {
 
+            // Check events :
             if( pfds[ i ].revents & POLLIN ) {
+                // meaning : data is ready
 
+                // meaning : listening socket is readable -> new client
                 /* NEW CONNECTION */
                 if( pfds[ i ].fd == listener ) {
-
                     // Steps :
 
                     struct sockaddr_storage addr;
                     socklen_t len = sizeof addr;
 
-                    // 1. accept()
+                    // 1. accept() : creates new socket for client
                     int newfd = accept( listener, ( struct sockaddr* ) &addr, &len );
 
                     if( newfd == -1 ) {
                         continue;
                     }
 
+                    // resize poll array if full : i.e., Double the size
                     if( fd_count == fd_size ){
                         fd_size *= 2;
                         pfds = realloc( pfds, sizeof( *pfds ) *fd_size );
@@ -293,6 +341,7 @@ int main( void ) {
 
                 /* CLIENT MESSAGE */
                 else{
+                    // meaning : this is client socket
 
                     char buf[ 256 ];
                     
@@ -301,7 +350,7 @@ int main( void ) {
 
                     int fd = pfds[ i ].fd;
 
-                    // if client left
+                    // if client left : i.e., client disconnected
                     if( n <= 0 ) {
 
                         client_t *c = get_client( fd );
@@ -313,13 +362,14 @@ int main( void ) {
                         // close socket
                         close( fd );
 
-                        // remove client
+                        // remove client from list
                         remove_client( fd );
 
                         // delete from poll list
                         pfds[ i ] = pfds[ fd_count - 1 ];
                         fd_count--;
                         i--;
+                        // O( 1 )
 
                         continue;
                     }
@@ -330,8 +380,9 @@ int main( void ) {
                     // check if username not set
                     client_t *c = get_client( fd );
 
-                    /* FIRST MESSAGE = USERNAME */
+                    // user not registered yet
                     if( !c ) {
+                        /* FIRST MESSAGE = USERNAME */
 
                         add_client( fd, buf );
 
@@ -350,7 +401,7 @@ int main( void ) {
                     get_time( timebuf );
 
                     char out[ 512 ];
-                    sprintf( out, "[%s] %s: %s\n", timebuf,c -> name, buf );
+                    sprintf( out, "[%s] %s: %s\n", timebuf, c -> name, buf );
 
                     /* BROADCAST */
                     for( int j = 0; j < fd_count; j++ ) {
@@ -369,10 +420,21 @@ int main( void ) {
     }
 }
 /*
+
 Client joins
  - asked username
  - stored
  - sends message
  - server timestamps
  - broadcast to all
+
+System Level Design:
+- poll() = kernel event loop
+- No threads
+- No fork
+- Single process
+- Scales to 1000s clients
+- Low memory
+- Non - blocking I/O
+
 */

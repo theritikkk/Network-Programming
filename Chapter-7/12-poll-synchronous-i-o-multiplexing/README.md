@@ -216,7 +216,7 @@ ritik left
 | fork()   | heavy processes        |
 | threads  | synchronization issues |
 | select() | fd limit               |
-| poll()   | scalable ✔             |
+| poll()   | scalable               |
 
 
 ---
